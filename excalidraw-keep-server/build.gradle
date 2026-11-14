@@ -1,0 +1,46 @@
+plugins {
+    id 'org.springframework.boot' version '2.6.13'
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+    id 'java'
+}
+
+group = 'com.baby7'
+version = '0.1.0'
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+repositories {
+    // 国内镜像优先；官方仓库作为兜底
+    maven { url 'https://maven.aliyun.com/repository/public' }
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    runtimeOnly 'mysql:mysql-connector-java'
+    // 本地没有 MySQL 时可以用 H2 跑（APP_DB_URL=jdbc:h2:./data/keep;AUTO_SERVER=TRUE）
+    runtimeOnly 'com.h2database:h2'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// 可选：把 ../excalidraw-keep-web/dist 复制进 Spring Boot 的静态资源目录。
+// 平时开发用 vite 的 proxy，不跑这个任务；打 fat jar 时用 scripts/build-web.sh。
+tasks.register('copyWeb', Copy) {
+    from "${rootDir}/../excalidraw-keep-web/dist"
+    into "${projectDir}/src/main/resources/static"
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}

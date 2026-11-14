@@ -1,0 +1,71 @@
+server:
+  port: ${APP_PORT:8080}
+  compression:
+    enabled: true
+    mime-types: application/json,text/html,text/css,application/javascript,image/svg+xml
+  tomcat:
+    max-swallow-size: -1
+
+spring:
+  application:
+    name: excalidraw-keep
+
+  datasource:
+    url: ${APP_DB_URL:jdbc:mysql://localhost:3306/excalidraw_keep?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${APP_DB_USER:root}
+    password: ${APP_DB_PASSWORD:root}
+    driver-class-name: ${APP_DB_DRIVER:com.mysql.cj.jdbc.Driver}
+    hikari:
+      maximum-pool-size: ${APP_DB_POOL_SIZE:10}
+      minimum-idle: 2
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # update：便携（MySQL / SQLite / Oracle 都能自动建表）。
+      # 想换成 Flyway 时改成 none，并把迁移脚本放进 db/migration/{vendor}。
+      ddl-auto: ${APP_DDL_AUTO:update}
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        order_inserts: true
+        order_updates: true
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+  servlet:
+    multipart:
+      max-file-size: ${APP_MAX_FILE_BYTES:8MB}
+      max-request-size: ${APP_MAX_SCENE_BYTES:32MB}
+
+  web:
+    resources:
+      static-locations: ${APP_STATIC_LOCATION:classpath:/static/,file:./static/}
+      cache:
+        cachecontrol:
+          # 一律带 ETag 重新校验：升级后浏览器不能继续用旧 index.html 去引用已删除的 bundle
+          no-cache: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+app:
+  # 单个场景（elements + appState）的最大字符数，超过返回 413
+  max-scene-chars: ${APP_MAX_SCENE_CHARS:33554432}
+  # 单个附件最大字节数
+  max-file-bytes: ${APP_MAX_ATTACHMENT_BYTES:8388608}
+
+logging:
+  level:
+    root: INFO
+    com.baby7.excalidrawkeepserver: ${APP_LOG_LEVEL:INFO}

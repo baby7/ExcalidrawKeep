@@ -1,0 +1,10 @@
+pluginManagement {
+    repositories {
+        // 国内镜像优先，避免依赖下载卡住；拿不到时再回落到官方仓库
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'excalidraw-keep-server'

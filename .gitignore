@@ -1,0 +1,17 @@
+# 依赖与构建产物
+**/node_modules/
+**/dist/
+**/build/
+**/.gradle/
+excalidraw-keep-server/src/main/resources/static/
+excalidraw-keep-web/public/fonts/
+
+# 本地数据/环境
+.env
+data/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.iml

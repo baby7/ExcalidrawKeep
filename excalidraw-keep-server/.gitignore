@@ -1,0 +1,12 @@
+# 构建产物
+build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# 前端产物（由 scripts/build-web.sh 生成）
+src/main/resources/static/
+
+# IDE
+.idea/
+*.iml
+.vscode/

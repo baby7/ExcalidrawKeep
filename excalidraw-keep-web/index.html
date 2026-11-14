@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ExcalidrawKeep</title>
+    <script>
+      // Excalidraw 的字体等静态资源都从根路径取；
+      // 字体由 scripts/copy-fonts.mjs 从 node_modules 复制到 public/fonts。
+      // 这段必须写在 bundle 之前，Excalidraw 模块加载时就会读它。
+      window.EXCALIDRAW_ASSET_PATH = "/";
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

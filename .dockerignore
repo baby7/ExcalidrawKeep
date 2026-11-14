@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/build
+**/.gradle
+**/public/fonts
+excalidraw-keep-server/src/main/resources/static
+*.log
+.git
+.idea
+.vscode
+README.md
+Dockerfile
+docker-compose.yml
