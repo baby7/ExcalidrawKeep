@@ -15,8 +15,13 @@ RUN npm run build
 FROM gradle:7.5.1-jdk17 AS server-builder
 WORKDIR /workspace
 
+# gradle 官方镜像默认以 gradle(1000) 用户运行，而 COPY 进来的文件属主是 root，
+# 不 chown 的话 `gradle bootJar` 往 /workspace/build 写文件会 Permission denied。
+USER root
 COPY excalidraw-keep-server/ ./
 COPY --from=web-builder /app/dist ./src/main/resources/static
+RUN chown -R gradle:gradle /workspace
+USER gradle
 
 # 用镜像里的 gradle 直接构建，避免再下载 wrapper 分发包
 RUN gradle bootJar --no-daemon -x test

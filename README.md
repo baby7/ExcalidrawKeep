@@ -5,7 +5,7 @@
 - 前端：Vite + React 18 + `@excalidraw/excalidraw` 0.18.0（自研外壳：画布列表、重命名、缩略图、手动保存按钮）
 - 后端：Spring Boot 2.6.13 / Java 8 + Spring Data JPA（Hibernate）
 - 数据库：MySQL 8.4（utf8mb4），表结构由 Hibernate `ddl-auto=update` 自动维护
-- 部署：`Dockerfile` 三段构建 + `docker-compose.yml`（app + mysql）
+- 部署：`Dockerfile` 三段构建 + `docker-compose.yml`（app + mysql）；也可以让 GitHub Actions 构建镜像后用 `docker-compose.hub.yml` 直接拉取
 
 ## 快速开始（Docker）
 
@@ -24,6 +24,25 @@ docker compose up -d --build     # 首次会构建前端、后端镜像，等 5�
 ```bash
 NPM_REGISTRY=https://registry.npmmirror.com docker compose up -d --build
 ```
+
+## 用预构建镜像部署（Docker Hub）
+
+仓库自带 `.github/workflows/docker.yml`：推送到 `master`/`main` 后自动构建并推送 `baby7/excalidraw-keep:latest`；打 `v*` tag 会额外推同名版本 tag，每次构建还会推一个 `sha-xxxxxxx` tag。
+
+先在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 里加两个 secret：
+
+- `DOCKERHUB_USERNAME`：Docker Hub 用户名
+- `DOCKERHUB_TOKEN`：Docker Hub Access Token（Account settings → Security → New Access Token，权限选 Read & Write）
+
+之后服务器上不需要源码和编译环境，只拉镜像：
+
+```bash
+docker compose -f docker-compose.hub.yml up -d
+```
+
+更新版本：`docker compose -f docker-compose.hub.yml pull && docker compose -f docker-compose.hub.yml up -d`。
+固定版本：`APP_IMAGE=baby7/excalidraw-keep:1.0.0 docker compose -f docker-compose.hub.yml up -d`。
+想同时出 arm64 镜像（NAS / 树莓派）：把 workflow 里 `platforms: linux/amd64` 换成注释里的两架构写法，并启用上方的 QEMU 步骤（构建会慢 5–10 倍）。
 
 ## 本地开发
 

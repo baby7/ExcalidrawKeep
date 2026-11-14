@@ -6,6 +6,7 @@
 excalidraw-keep-server/src/main/resources/static
 *.log
 .git
+.github
 .idea
 .vscode
 README.md
