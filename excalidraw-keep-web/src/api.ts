@@ -2,6 +2,8 @@
 //  - 场景（elements/appState）只有一次 PUT，附件（图片）走内容寻址的单独 PUT；
 //  - 保存必须带 baseVersion，冲突时后端回 409 + currentVersion，前端据此合并重试。
 
+import type { Theme } from "./theme";
+
 export interface DrawingSummary {
   id: string;
   name: string;
@@ -27,6 +29,11 @@ export interface PageResponse<T> {
   total: number;
   page: number;
   size: number;
+}
+
+/** 全局设置（目前只有主题），存在后端的 app_setting 表里。 */
+export interface SettingsResponse {
+  theme: Theme;
 }
 
 export class ApiError extends Error {
@@ -137,6 +144,17 @@ export const apiClient = {
   deleteDrawing(id: string): Promise<void> {
     return request(`/api/drawings/${encodeURIComponent(id)}`, {
       method: "DELETE",
+    });
+  },
+
+  getSettings(): Promise<SettingsResponse> {
+    return request(`/api/settings`);
+  },
+
+  updateSettings(theme: Theme): Promise<SettingsResponse> {
+    return request(`/api/settings`, {
+      method: "PUT",
+      body: JSON.stringify({ theme }),
     });
   },
 

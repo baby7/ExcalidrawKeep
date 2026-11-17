@@ -6,6 +6,7 @@
 - 1 秒防抖自动保存，顶栏「保存」按钮 / `Ctrl + S` 手动保存
 - 多标签页同时编辑：版本号乐观锁 + 元素级合并，不会互相覆盖
 - 图片附件按内容 SHA-1 去重，和画布一起存在数据库里
+- 浅色 / 深色主题切换（偏好存数据库），列表页和编辑器（顶栏 + 官方画布）都跟着换
 - 只保留最新内容，没有历史版本；所有数据都在你自己的库里
 
 ## 安装
@@ -44,7 +45,7 @@ CREATE DATABASE excalidraw_keep CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci
 | `APP_MAX_ATTACHMENT_BYTES` | `8388608` | 单个图片附件上限（8 MB） |
 | `JAVA_OPTS` | `-Xms256m -Xmx512m` | JVM 参数 |
 
-固定版本：把 `:latest` 换成 `:0.1.0` 这样的具体版本。
+固定版本：把 `:latest` 换成 `:0.1.1` 这样的具体版本。
 
 ## 升级
 
@@ -71,6 +72,13 @@ mysqldump -h 192.168.1.100 -u root -p excalidraw_keep > backup-$(date +%F).sql
 ## 常见问题
 
 - **连不上数据库**：`Communications link failure` 多半是端口/防火墙，`Access denied` 是账号没有远程授权，`Unknown database` 是库还没建。
+- **新建的画布能存，某个老画布一改就报 `Incorrect string value ... for column 'elements'`**：老画布的场景 JSON 里带着历史遗留字符（早先字符集不一致时写进去的）。把它导出成 `.excalidraw` 文件 → 删除这个画布 → 新建画布 → 导入该文件，之后就能正常保存。库/表请保持 `utf8mb4`：
+
+  ```sql
+  ALTER TABLE drawing CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+  ALTER TABLE drawing_file CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+  ALTER TABLE app_setting CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+  ```
 - **保存大画布报 413 / 500**：同时调大 `APP_MAX_SCENE_CHARS` 和 MySQL 的 `max_allowed_packet`。
 - **界面还是旧的 / 字体 404**：静态资源是 `no-cache`，强制刷新（`Ctrl + Shift + R`）即可。
 

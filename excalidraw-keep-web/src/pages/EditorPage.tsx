@@ -7,8 +7,14 @@ import {
   ConflictError,
   type SceneResponse,
 } from "../api";
+import { applyTheme, readCachedTheme, type Theme } from "../theme";
 
 type SaveStatus = "saved" | "dirty" | "saving" | "error";
+
+/** 主题调试日志：控制台搜 [excalidraw-keep][theme] 就能看到整条链路 */
+function themeLog(...args: unknown[]) {
+  console.info("[excalidraw-keep][theme]", ...args);
+}
 
 /** 只持久化这些 appState 字段：滚动位置、选中元素之类的高频字段没必要存。 */
 const PERSISTED_APP_STATE_KEYS = [
@@ -93,8 +99,11 @@ export default function EditorPage() {
   const [status, setStatus] = useState<SaveStatus>("saved");
   const [errorText, setErrorText] = useState("");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [activeTheme, setActiveTheme] = useState<Theme>(readCachedTheme);
 
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
+  /** Excalidraw 挂载的容器，用来给官方画布补 theme--dark（XPath: #root > div > div[2] > div） */
+  const canvasHostRef = useRef<HTMLDivElement | null>(null);
   /** 服务端的场景版本号，保存时作为 baseVersion 发出去 */
   const versionRef = useRef(0);
   /** 最近一次「已经写进数据库」的内容指纹，用来判断是否真的有改动 */
@@ -270,30 +279,41 @@ export default function EditorPage() {
     }, delay);
   }, []);
 
-  // 首次加载
+  // 首次加载：画布和全局设置一起取，先把主题应用到我们自己的界面上
   useEffect(() => {
     let cancelled = false;
     setInitialData(null);
     setLoadError("");
     (async () => {
       try {
-        const scene = await apiClient.getScene(id);
+        const [scene, settings] = await Promise.all([
+          apiClient.getScene(id),
+          apiClient.getSettings().catch(() => null),
+        ]);
         if (cancelled) return;
+
+        // 全局主题既作用在我们自己的界面（顶栏、页面背景），
+        // 也通过下面那个 effect 补到官方画布容器的 class 上。
+        const nextTheme = settings?.theme ?? readCachedTheme();
+        themeLog("加载到主题", { fromServer: settings?.theme ?? null, cached: readCachedTheme(), applied: nextTheme });
+        applyTheme(nextTheme);
+        setActiveTheme(nextTheme);
+
+        const appState = scene.appState as Record<string, unknown>;
+
         versionRef.current = scene.version;
         uploadedRef.current = new Set(Object.keys(scene.files));
-        savedSigRef.current = sceneSignature(
-          scene.elements as any[],
-          scene.appState as any,
-        );
+        // 指纹基准就是库里读出来的 appState，加载后不会凭空被判成有改动
+        savedSigRef.current = sceneSignature(scene.elements as any[], appState);
         latestRef.current = {
           elements: scene.elements as any[],
-          appState: scene.appState,
+          appState,
           files: filesToBinaryFiles(scene.files),
         };
         setTitle(scene.name);
         setInitialData({
           elements: scene.elements,
-          appState: { ...scene.appState, collaborators: new Map() },
+          appState: { ...appState, collaborators: new Map() },
           files: filesToBinaryFiles(scene.files),
           scrollToContent: true,
         });
@@ -307,6 +327,56 @@ export default function EditorPage() {
       cancelled = true;
     };
   }, [id]);
+
+  // 官方画布的主题：Excalidraw 每次渲染都会按自己的 state.theme（默认 light）
+  // 重置容器 div 上的 theme--dark，所以这里盯着 class，需要深色时补回去。
+  // 依赖里带上 initialData：首帧还是「加载中」，容器要等场景数据到了才存在。
+  useEffect(() => {
+    const host = canvasHostRef.current;
+    themeLog("bind 开始", { activeTheme, hasHost: Boolean(host), hasInitialData: Boolean(initialData) });
+    if (!host) {
+      themeLog("容器 host 还没渲染，跳过");
+      return;
+    }
+
+    let container: HTMLElement | null = null;
+    let frame = 0;
+    let observer: MutationObserver | null = null;
+
+    const sync = () => {
+      if (!container) return;
+      const dark = activeTheme === "dark";
+      const before = container.classList.contains("theme--dark");
+      if (before !== dark) {
+        container.classList.toggle("theme--dark", dark);
+        themeLog("补丁生效", { dark, className: container.className });
+      }
+    };
+
+    const locate = () => {
+      const found = host.querySelector<HTMLElement>(".excalidraw-container");
+      if (!found) {
+        themeLog("还没找到 .excalidraw-container，下一帧再试");
+        frame = window.requestAnimationFrame(locate);
+        return;
+      }
+      if (found === container) return;
+      container = found;
+      themeLog("找到官方画布容器", { className: found.className });
+      observer?.disconnect();
+      observer = new MutationObserver(sync);
+      observer.observe(found, { attributes: true, attributeFilter: ["class"] });
+      sync();
+      themeLog("绑定完成", { className: container.className });
+    };
+
+    locate();
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
+  }, [activeTheme, initialData]);
 
   const handleChange = useCallback(
     (elements: readonly any[], appState: any, files: any) => {
@@ -437,6 +507,7 @@ export default function EditorPage() {
 
       <div
         className="editor-canvas"
+        ref={canvasHostRef}
         onPointerDownCapture={() => {
           interactedRef.current = true;
         }}

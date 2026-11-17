@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiClient, ApiError, type DrawingSummary } from "../api";
+import { applyTheme, readCachedTheme, type Theme } from "../theme";
 
 const PAGE_SIZE = 24;
 
@@ -23,6 +24,8 @@ export default function ListPage() {
   const [creating, setCreating] = useState(false);
   const [renaming, setRenaming] = useState<DrawingSummary | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [theme, setTheme] = useState<Theme>(readCachedTheme);
+  const [themeSaving, setThemeSaving] = useState(false);
 
   // 请求序号：快速输入时只认最后一次请求的结果，避免旧响应覆盖新结果
   const requestSeq = useRef(0);
@@ -52,6 +55,45 @@ export default function ListPage() {
     }, 250);
     return () => window.clearTimeout(timer);
   }, [query, page, load]);
+
+  // 主题是全局设置，存在数据库里；本地缓存只是让首屏不用等接口
+  useEffect(() => {
+    let cancelled = false;
+    apiClient
+      .getSettings()
+      .then((settings) => {
+        if (cancelled) return;
+        setTheme(settings.theme);
+        applyTheme(settings.theme);
+      })
+      .catch(() => {
+        // 设置读不到不影响画布列表
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleToggleTheme = async () => {
+    if (themeSaving) return;
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    const previous = theme;
+    // 先切界面（快），写库成功后以服务端返回为准，失败就退回去
+    setTheme(next);
+    applyTheme(next);
+    setThemeSaving(true);
+    try {
+      const saved = await apiClient.updateSettings(next);
+      setTheme(saved.theme);
+      applyTheme(saved.theme);
+    } catch (err) {
+      setTheme(previous);
+      applyTheme(previous);
+      setError(err instanceof Error ? err.message : "主题保存失败");
+    } finally {
+      setThemeSaving(false);
+    }
+  };
 
   const handleCreate = async () => {
     if (creating) return;
@@ -109,6 +151,14 @@ export default function ListPage() {
           </div>
         </div>
         <div className="list-toolbar">
+          <button
+            className="theme-toggle"
+            onClick={() => void handleToggleTheme()}
+            disabled={themeSaving}
+            title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"}
+          >
+            {theme === "dark" ? "☀️ 浅色" : "🌙 深色"}
+          </button>
           <input
             type="search"
             placeholder="搜索画布名称…"

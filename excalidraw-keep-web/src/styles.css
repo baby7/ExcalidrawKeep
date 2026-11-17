@@ -5,12 +5,47 @@
   --text: #1f2328;
   --text-dim: #6b7280;
   --accent: #4f46e5;
+  --accent-hover: #4338ca;
   --accent-soft: #eef2ff;
   --danger: #dc2626;
   --ok: #16a34a;
   --warn: #d97706;
+  --hover: #f2f3f5;
+  --checker-a: #f3f4f6;
+  --checker-b: #ffffff;
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+  --danger-text: #991b1b;
+  --mask: rgba(15, 23, 42, 0.35);
   --radius: 10px;
   --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-hover: 0 4px 10px rgba(15, 23, 42, 0.08), 0 16px 32px rgba(15, 23, 42, 0.08);
+  color-scheme: light;
+}
+
+/* 深色主题：只换颜色变量，布局和交互不变 */
+[data-theme="dark"] {
+  --bg: #16181d;
+  --panel: #1f2229;
+  --border: #343943;
+  --text: #e6e8ec;
+  --text-dim: #9aa1ad;
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --accent-soft: rgba(99, 102, 241, 0.18);
+  --danger: #f87171;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --hover: #2a2e37;
+  --checker-a: #262a32;
+  --checker-b: #1f2229;
+  --danger-bg: rgba(248, 113, 113, 0.12);
+  --danger-border: rgba(248, 113, 113, 0.35);
+  --danger-text: #fca5a5;
+  --mask: rgba(0, 0, 0, 0.6);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-hover: 0 4px 10px rgba(0, 0, 0, 0.45), 0 16px 32px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
 }
 
 * {
@@ -49,7 +84,7 @@ button {
 }
 
 button:hover {
-  background: #f2f3f5;
+  background: var(--hover);
 }
 
 button.primary {
@@ -59,7 +94,7 @@ button.primary {
 }
 
 button.primary:hover {
-  background: #4338ca;
+  background: var(--accent-hover);
 }
 
 button.danger {
@@ -119,6 +154,11 @@ input[type="search"]:focus {
   align-items: center;
 }
 
+.theme-toggle {
+  white-space: nowrap;
+  font-size: 13px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -138,13 +178,14 @@ input[type="search"]:focus {
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08), 0 16px 32px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-hover);
 }
 
 .card .thumb {
   display: block;
   height: 150px;
-  background: repeating-conic-gradient(#f3f4f6 0% 25%, #ffffff 0% 50%) 50% / 20px 20px;
+  background: repeating-conic-gradient(var(--checker-a) 0% 25%, var(--checker-b) 0% 50%) 50% /
+    20px 20px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -221,9 +262,9 @@ input[type="search"]:focus {
 }
 
 .error-banner {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
   padding: 10px 14px;
   border-radius: 8px;
   margin-bottom: 16px;
@@ -235,7 +276,7 @@ input[type="search"]:focus {
 .modal-mask {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.35);
+  background: var(--mask);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -248,7 +289,7 @@ input[type="search"]:focus {
   padding: 20px;
   width: 380px;
   max-width: calc(100vw - 32px);
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 24px 64px var(--mask);
 }
 
 .modal h3 {
@@ -388,8 +429,8 @@ input[type="search"]:focus {
 }
 
 .save-button:hover:not(:disabled) {
-  background: #4338ca;
-  border-color: #4338ca;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .save-button:disabled {
